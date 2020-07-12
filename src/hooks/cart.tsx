@@ -31,22 +31,63 @@ const CartProvider: React.FC = ({ children }) => {
   useEffect(() => {
     async function loadProducts(): Promise<void> {
       // TODO LOAD ITEMS FROM ASYNC STORAGE
+      const items = await AsyncStorage.getItem('@GoMarket:products');
+      if (items) {
+        setProducts(JSON.parse(items));
+        // await AsyncStorage.setItem('@GoMarket:products', ''); //To reset if needed
+      }
     }
 
     loadProducts();
   }, []);
 
-  const addToCart = useCallback(async product => {
-    // TODO ADD A NEW ITEM TO THE CART
-  }, []);
+  const addToCart = useCallback(
+    async (product: Product) => {
+      const addProduct = { ...product, quantity: 1 };
+      setProducts([...products, addProduct]);
+      await AsyncStorage.setItem(
+        '@GoMarket:products',
+        JSON.stringify(products),
+      );
+    },
+    [products],
+  );
 
-  const increment = useCallback(async id => {
-    // TODO INCREMENTS A PRODUCT QUANTITY IN THE CART
-  }, []);
+  const increment = useCallback(
+    async id => {
+      const product = products.find(x => x.id === id);
+      if (product) product.quantity += 1;
 
-  const decrement = useCallback(async id => {
-    // TODO DECREMENTS A PRODUCT QUANTITY IN THE CART
-  }, []);
+      setProducts([...products.filter(x => x.id !== id), product] as Product[]);
+      await AsyncStorage.setItem(
+        '@GoMarket:products',
+        JSON.stringify(products),
+      );
+
+      // TODO INCREMENTS A PRODUCT QUANTITY IN THE CART
+    },
+    [products],
+  );
+
+  const decrement = useCallback(
+    async id => {
+      const product = products.find(x => x.id === id);
+      if (product) {
+        product.quantity -= 1;
+        if (product.quantity > 0) {
+          setProducts([...products.filter(x => x.id !== id), product]);
+        } else {
+          setProducts([...products.filter(x => x.id !== id)]);
+        }
+        await AsyncStorage.setItem(
+          '@GoMarket:products',
+          JSON.stringify(products),
+        );
+      }
+      // TODO DECREMENTS A PRODUCT QUANTITY IN THE CART
+    },
+    [products],
+  );
 
   const value = React.useMemo(
     () => ({ addToCart, increment, decrement, products }),
